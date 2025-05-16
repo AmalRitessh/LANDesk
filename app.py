@@ -1,6 +1,7 @@
 import tkinter as tk
 import socket
 import threading
+import subprocess
 
 class LANDesk:
     def __init__(self):
@@ -53,7 +54,23 @@ class LANDesk:
                 self.root.after(0, lambda: self.add_request(addr[0]))
             elif data.decode() == "ACCEPTING REQUEST":
                 self.root.after(0, lambda: self.add_view(addr[0]))
+            elif data.decode() == "CONNECT TO SERVER":
+                self.root.after(0, lambda: self.initiate_client(addr[0]))
         conn.close()
+
+    def initiate_client(self,IP):
+        subprocess.Popen(["python3", "client.py", IP], text=True)
+
+    def initiate_server(self,IP,frame):
+        frame.destroy()
+        subprocess.Popen(["python3", "server.py"], text=True)
+
+        msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        msg_client_socket.connect((IP, 12345))
+
+        message = "CONNECT TO SERVER"
+        msg_client_socket.sendall(message.encode())
+        msg_client_socket.close()
 
     def access_request(self,IP):
         msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,7 +107,7 @@ class LANDesk:
         viewObjectFrame.pack(pady=2)
 
         tk.Label(viewObjectFrame,text=IP,font=("Comic Sans MS",13)).place(x=65,y=10)
-        view = tk.Button(viewObjectFrame,text="View",font=("Comic Sans MS",12))
+        view = tk.Button(viewObjectFrame,text="View",font=("Comic Sans MS",12), command=lambda f=viewObjectFrame: self.initiate_server(IP,f))
         view.place(x=250,y=5)
 
         reject = tk.Button(viewObjectFrame,text="Reject",font=("Comic Sans MS",12),command=lambda f=viewObjectFrame: self.remove(f))

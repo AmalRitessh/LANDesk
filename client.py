@@ -1,8 +1,9 @@
 import socket
+import sys
 import pyautogui
 import io
 
-SERVER_IP = '192.168.29.147'
+SERVER_IP = sys.argv[1]
 PORT = 5000
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

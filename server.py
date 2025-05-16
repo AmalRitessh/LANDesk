@@ -27,8 +27,12 @@ def receive_images(conn):
         label.image = tk_img
 
 def monitor():
-    HOST = '192.168.29.147'
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))  # Connect to a public DNS to get the right interface
+    HOST = s.getsockname()[0]
+    s.close()
     PORT = 5000
+    
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((HOST, PORT))
     server_socket.listen()

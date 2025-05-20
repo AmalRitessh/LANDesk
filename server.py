@@ -1,8 +1,48 @@
 import socket
 from PIL import Image, ImageTk
 import io
+import sys
 import tkinter as tk
 import threading
+import json
+
+SERVER_IP = sys.argv[1]
+
+def send_message(message):
+    msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    msg_client_socket.connect((SERVER_IP, 12000))
+    msg_client_socket.sendall(message.encode())
+    msg_client_socket.close()
+
+def on_click(event):
+    button_map = {1: "Left", 2: "Middle", 3: "Right"}
+    data = {
+        "event": "click",
+        "x": event.x,
+        "y": event.y,
+        "button": button_map.get(event.num, f"Button-{event.num}"),
+        "action": "pressed"
+    }
+    send_message(json.dumps(data))
+
+def on_release(event):
+    button_map = {1: "Left", 2: "Middle", 3: "Right"}
+    data = {
+        "event": "click",
+        "x": event.x,
+        "y": event.y,
+        "button": button_map.get(event.num, f"Button-{event.num}"),
+        "action": "released"
+    }
+    send_message(json.dumps(data))
+
+def on_move(event):
+    data = {
+        "event": "move",
+        "x": event.x,
+        "y": event.y
+    }
+    send_message(json.dumps(data))
 
 def receive_images(conn):
     while True:
@@ -44,7 +84,20 @@ root = tk.Tk()
 root.title("LANDesk")
 root.minsize(width=1280, height=720)
 label = tk.Label(root,bg="lightblue")
-label.pack(expand=True, fill='both')
+label.place(x=0, y=0, width=1280, height=720)
+
+# Bind press events
+label.bind("<Button-1>", on_click)
+label.bind("<Button-2>", on_click)
+label.bind("<Button-3>", on_click)
+
+# Bind release events
+label.bind("<ButtonRelease-1>", on_release)
+label.bind("<ButtonRelease-2>", on_release)
+label.bind("<ButtonRelease-3>", on_release)
+
+# Mouse movement
+label.bind("<Motion>", on_move)
 
 threading.Thread(target=monitor, daemon=True).start()
 root.mainloop()

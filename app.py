@@ -63,7 +63,7 @@ class LANDesk:
 
     def initiate_server(self,IP,frame):
         frame.destroy()
-        subprocess.Popen(["python3", "server.py"], text=True)
+        subprocess.Popen(["python3", "server.py", IP], text=True)
 
         msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         msg_client_socket.connect((IP, 12345))

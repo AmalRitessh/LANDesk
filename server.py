@@ -9,10 +9,7 @@ import json
 SERVER_IP = sys.argv[1]
 
 def send_message(message):
-    msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    msg_client_socket.connect((SERVER_IP, 12000))
-    msg_client_socket.sendall(message.encode())
-    msg_client_socket.close()
+    msg_client_socket.sendall((message+"\n").encode())
 
 def on_click(event):
     button_map = {1: "Left", 2: "Middle", 3: "Right"}
@@ -98,6 +95,9 @@ label.bind("<ButtonRelease-3>", on_release)
 
 # Mouse movement
 label.bind("<Motion>", on_move)
+
+msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+msg_client_socket.connect((SERVER_IP, 12000))
 
 threading.Thread(target=monitor, daemon=True).start()
 root.mainloop()

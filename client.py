@@ -17,13 +17,26 @@ def message_listener():
     msg_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     msg_server_socket.bind((HOST_IP, 12000))
     msg_server_socket.listen()
+    conn, addr = msg_server_socket.accept()
 
-    while True:
-        conn, addr = msg_server_socket.accept()
-        data = conn.recv(1024)
-        if not data:
-            break
-        execute_mouse_action(data)
+    buffer = ""
+
+    with conn:
+        while True:
+            try:
+                data = conn.recv(1024).decode()
+                if not data:
+                    break
+
+                buffer += data
+                while '\n' in buffer:
+                    json_str, buffer = buffer.split('\n', 1)
+                    if json_str.strip():
+                        execute_mouse_action(json_str.strip())
+            except Exception as e:
+                print(f"[ERROR] {e}")
+                break
+
     conn.close()
 
 def execute_mouse_action(json_data):

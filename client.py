@@ -43,10 +43,10 @@ def execute_mouse_action(json_data):
     data = json.loads(json_data)
 
     if data["event"] == "move":
-        mouse_controller.position = (data["x"], data["y"])
+        mouse_controller.position = (round(data["x"]*WIDTH_SCALE_FACTOR), round(data["y"]*HEIGHT_SCALE_FACTOR))
 
     elif data["event"] == "click":
-        mouse_controller.position = (data["x"], data["y"])
+        mouse_controller.position = (round(data["x"]*WIDTH_SCALE_FACTOR), round(data["y"]*HEIGHT_SCALE_FACTOR))
         button = Button.left if data["button"] == "Button.left" else Button.right
 
         if data["action"] == "pressed":
@@ -56,6 +56,9 @@ def execute_mouse_action(json_data):
 
 SERVER_IP = sys.argv[1]
 PORT = 5000
+SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
+WIDTH_SCALE_FACTOR = SCREEN_WIDTH/1280
+HEIGHT_SCALE_FACTOR = SCREEN_HEIGHT/720
 
 message_thread = threading.Thread(target=message_listener, daemon=True)
 message_thread.start()

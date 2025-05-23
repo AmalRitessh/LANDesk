@@ -41,6 +41,16 @@ def on_move(event):
     }
     send_message(json.dumps(data))
 
+def on_scroll(event):
+    data = {
+        "event": "scroll",
+        "x": event.x,
+        "y": event.y,
+        "direction": "up" if event.delta > 0 else "down",
+        "amount": 1
+    }
+    send_message(json.dumps(data))
+
 def receive_images(conn):
     while True:
         # Receive image size first
@@ -95,6 +105,9 @@ label.bind("<ButtonRelease-3>", on_release)
 
 # Mouse movement
 label.bind("<Motion>", on_move)
+
+#Scroll movement
+label.bind("<MouseWheel>", on_scroll)
 
 msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 msg_client_socket.connect((SERVER_IP, 12000))

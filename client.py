@@ -43,16 +43,47 @@ def execute_mouse_action(json_data):
     data = json.loads(json_data)
 
     if data["event"] == "move":
-        mouse_controller.position = (round(data["x"]*WIDTH_SCALE_FACTOR), round(data["y"]*HEIGHT_SCALE_FACTOR))
+        mouse_controller.position = (
+            round(data["x"]*WIDTH_SCALE_FACTOR), 
+            round(data["y"]*HEIGHT_SCALE_FACTOR)
+            )
+
+    elif data["event"] == "scroll":
+        mouse_controller.position = (
+            round(data["x"]*WIDTH_SCALE_FACTOR), 
+            round(data["y"]*HEIGHT_SCALE_FACTOR)
+            )
+
+        if data["direction"] == "up":
+            mouse_controller.scroll(0, data["amount"])
+        elif data["direction"] == "down":
+            mouse_controller.scroll(0, -data["amount"])
+        else:
+            print("Unknown direction:", data["direction"])
 
     elif data["event"] == "click":
-        mouse_controller.position = (round(data["x"]*WIDTH_SCALE_FACTOR), round(data["y"]*HEIGHT_SCALE_FACTOR))
-        button = Button.left if data["button"] == "Button.left" else Button.right
+        mouse_controller.position = (
+            round(data["x"]*WIDTH_SCALE_FACTOR), 
+            round(data["y"]*HEIGHT_SCALE_FACTOR)
+            )
 
-        if data["action"] == "pressed":
-            mouse_controller.press(button)
+        button = None
+        if data["button"] == "Left":
+            button = Button.left
+        elif data["button"] == "Right":
+            button = Button.right
+        elif data["button"] == "Middle":
+            button = Button.middle
         else:
-            mouse_controller.release(button)
+            print("Unknown button:", data["button"])
+
+        if button:
+            if data["action"] == "pressed":
+                mouse_controller.press(button)
+            elif data["action"] == "released":
+                mouse_controller.release(button)
+            else:
+                print("Unknown action:", data["action"])
 
 SERVER_IP = sys.argv[1]
 PORT = 5000

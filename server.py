@@ -5,8 +5,11 @@ import sys
 import tkinter as tk
 import threading
 import json
+import keyboard
 
 SERVER_IP = sys.argv[1]
+hook = None
+lock = threading.Lock()
 
 def send_message(message):
     msg_client_socket.sendall((message+"\n").encode())
@@ -50,6 +53,37 @@ def on_scroll(event):
         "amount": 1
     }
     send_message(json.dumps(data))
+
+def on_key(event):
+    key_data = {
+        "event": "key",
+        "key": event.name,
+        "action": "pressed" if event.event_type == keyboard.KEY_DOWN else "released"
+    }
+    send_message(json.dumps(key_data))
+
+def start_hook():
+    global hook
+    with lock:
+        if hook is None:
+            hook = keyboard.hook(on_key, suppress=True)
+
+def stop_hook():
+    global hook
+    with lock:
+        if hook is not None:
+            keyboard.unhook(hook)
+            hook = None
+   
+def on_focus_in(event=None):
+    start_hook()
+
+def on_focus_out(event=None):
+    stop_hook()
+
+def on_closing():
+    stop_hook()
+    root.destroy()
 
 def receive_images(conn):
     while True:
@@ -108,6 +142,10 @@ label.bind("<Motion>", on_move)
 
 #Scroll movement
 label.bind("<MouseWheel>", on_scroll)
+
+root.bind("<FocusIn>", on_focus_in)
+root.bind("<FocusOut>", on_focus_out)
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
 msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 msg_client_socket.connect((SERVER_IP, 12000))

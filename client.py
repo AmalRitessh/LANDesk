@@ -5,6 +5,7 @@ import socket
 import pyautogui
 import threading
 from pynput.mouse import Button, Controller
+import keyboard
 
 mouse_controller = Controller()
 
@@ -32,14 +33,14 @@ def message_listener():
                 while '\n' in buffer:
                     json_str, buffer = buffer.split('\n', 1)
                     if json_str.strip():
-                        execute_mouse_action(json_str.strip())
+                        execute_input(json_str.strip())
             except Exception as e:
                 print(f"[ERROR] {e}")
                 break
 
     conn.close()
 
-def execute_mouse_action(json_data):
+def execute_input(json_data):
     data = json.loads(json_data)
 
     if data["event"] == "move":
@@ -84,6 +85,17 @@ def execute_mouse_action(json_data):
                 mouse_controller.release(button)
             else:
                 print("Unknown action:", data["action"])
+    elif data["event"] == "key":
+        try:
+            key = data["key"]
+            action = data["action"]
+            if action == "pressed":
+                keyboard.press(key)
+            elif action == "released":
+                keyboard.release(key)
+        except Exception as e:
+            print(f"Error processing key event: {e}")
+
 
 SERVER_IP = sys.argv[1]
 PORT = 5000

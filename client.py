@@ -6,6 +6,7 @@ import pyautogui
 import threading
 from pynput.mouse import Button, Controller
 import keyboard
+import tkinter as tk
 
 mouse_controller = Controller()
 
@@ -96,6 +97,16 @@ def execute_input(json_data):
         except Exception as e:
             print(f"Error processing key event: {e}")
 
+def send_image():
+    while True:
+        screenshot = pyautogui.screenshot()
+        img_byte_arr = io.BytesIO()
+        screenshot.save(img_byte_arr, format='JPEG', quality=80)
+        data = img_byte_arr.getvalue()
+
+        # Send length first
+        size = len(data).to_bytes(4, 'big')
+        client_socket.sendall(size + data)
 
 SERVER_IP = sys.argv[1]
 PORT = 5000
@@ -109,12 +120,13 @@ message_thread.start()
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_IP, PORT))
 
-while True:
-    screenshot = pyautogui.screenshot()
-    img_byte_arr = io.BytesIO()
-    screenshot.save(img_byte_arr, format='JPEG', quality=80)
-    data = img_byte_arr.getvalue()
+send_image_thread = threading.Thread(target=send_image,daemon=True)
+send_image_thread.start()
 
-    # Send length first
-    size = len(data).to_bytes(4, 'big')
-    client_socket.sendall(size + data)
+# root = tk.Tk()
+# root.title("LANDesk - Active")
+# label = tk.Label(root, text=SERVER_IP)
+# label.pack()
+
+# tk.Button(root, text="Close", command=on_close).pack()
+# root.mainloop()

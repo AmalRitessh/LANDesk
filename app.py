@@ -2,6 +2,7 @@ import tkinter as tk
 import socket
 import threading
 import subprocess
+import ipaddress
 
 class LANDesk:
     def __init__(self):
@@ -58,36 +59,57 @@ class LANDesk:
                 self.root.after(0, lambda: self.initiate_client(addr[0]))
         conn.close()
 
+    def is_valid_ip(self,ip_str):
+        try:
+            ipaddress.ip_address(ip_str)
+            return True
+        except ValueError:
+            return False
+
     def initiate_client(self,IP):
         subprocess.Popen(["python3", "client.py", IP], text=True)
 
     def initiate_server(self,IP,frame):
-        frame.destroy()
-        subprocess.Popen(["python3", "server.py"], text=True)
+        try:
+            frame.destroy()
+            msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            msg_client_socket.settimeout(2)
+            msg_client_socket.connect((IP, 12345))
+            subprocess.Popen(["python3", "server.py", IP], text=True)
 
-        msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        msg_client_socket.connect((IP, 12345))
-
-        message = "CONNECT TO SERVER"
-        msg_client_socket.sendall(message.encode())
-        msg_client_socket.close()
+            message = "CONNECT TO SERVER"
+            msg_client_socket.sendall(message.encode())
+            msg_client_socket.close()
+        except:
+            print("can't connect: initiate_server")
 
     def access_request(self,IP):
-        msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        msg_client_socket.connect((IP, 12345))
+        if self.is_valid_ip(IP):
+            try:
+                msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                msg_client_socket.settimeout(2)
+                msg_client_socket.connect((IP, 12345))
 
-        message = "REQUESTING ACCESS"
-        msg_client_socket.sendall(message.encode())
-        msg_client_socket.close()
+                message = "REQUESTING ACCESS"
+                msg_client_socket.sendall(message.encode())
+                msg_client_socket.close()
+            except:
+                print("can't connect: access_request")
+        else:
+            print("invalid ip: access_request")
 
     def accept_response(self,IP,frame):
-        frame.destroy()
-        msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        msg_client_socket.connect((IP, 12345))
+        try:
+            frame.destroy()
+            msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            msg_client_socket.settimeout(2)
+            msg_client_socket.connect((IP, 12345))
 
-        message = "ACCEPTING REQUEST"
-        msg_client_socket.sendall(message.encode())
-        msg_client_socket.close()
+            message = "ACCEPTING REQUEST"
+            msg_client_socket.sendall(message.encode())
+            msg_client_socket.close()
+        except:
+            print("can't connect: accept_response")
 
     def add_request(self,IP):
         requestObjectFrame = tk.Frame(self.requestFrame)

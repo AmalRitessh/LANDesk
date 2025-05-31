@@ -34,6 +34,9 @@ def message_listener():
                 while '\n' in buffer:
                     json_str, buffer = buffer.split('\n', 1)
                     if json_str.strip():
+                        if json_str.strip() == "CLOSEING FROM SERVER":
+                            print("CLOSEING FROM SERVER")
+                            on_closing()
                         execute_input(json_str.strip())
             except Exception as e:
                 print(f"[ERROR] {e}")
@@ -106,7 +109,17 @@ def send_image():
 
         # Send length first
         size = len(data).to_bytes(4, 'big')
-        client_socket.sendall(size + data)
+        try:
+            client_socket.sendall(size + data)
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            
+def on_closing():
+    data = "CLOSED FROM CLIENT"
+    size = len(data).to_bytes(4, 'big')
+    client_socket.sendall(size + data.encode())
+    client_socket.close()
+    root.destroy()
 
 SERVER_IP = sys.argv[1]
 PORT = 5000
@@ -123,10 +136,14 @@ client_socket.connect((SERVER_IP, PORT))
 send_image_thread = threading.Thread(target=send_image,daemon=True)
 send_image_thread.start()
 
-# root = tk.Tk()
-# root.title("LANDesk - Active")
-# label = tk.Label(root, text=SERVER_IP)
-# label.pack()
+root = tk.Tk()
+root.title("LANDesk - Active")
+root.config(bg="lightblue")
+root.minsize(height=100, width= 300)
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
-# tk.Button(root, text="Close", command=on_close).pack()
-# root.mainloop()
+label = tk.Label(root,bg="lightblue",font=("Comic Sans MS",17),text=SERVER_IP)
+label.pack()
+
+tk.Button(root, bg="lightblue", font=("Comic Sans MS",13), text="Close", command=on_closing).pack()
+root.mainloop()

@@ -92,13 +92,14 @@ def on_focus_out(event=None):
 
 def on_closing():
     stop_hook()
+    msg_client_socket.sendall(("CLOSEING FROM SERVER\n").encode())
     server_socket.close()
     msg_client_socket.close()
     root.destroy()
 
 def receive_images(conn):
-    try:
-        while True:
+    while True:
+        try:
             size_data = conn.recv(4)
             if not size_data:
                 break
@@ -111,14 +112,18 @@ def receive_images(conn):
                     break
                 data += packet
 
+            if data == b'CLOSED FROM CLIENT':
+                print("CLOSED FROM CLIENT")
+                on_closing()
+
             img = Image.open(io.BytesIO(data))
             resized_img = img.resize((1280, 720))
             tk_img = ImageTk.PhotoImage(resized_img)
 
             label.config(image=tk_img)
             label.image = tk_img
-    except Exception as e:
-        print(f"Error receiving or processing image: {e}")
+        except Exception as e:
+            print(f"Error receiving or processing image: {e}")
 
 # GUI Setup
 root = tk.Tk()
@@ -154,18 +159,16 @@ try:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((HOST, PORT))
     server_socket.listen()
+    conn, addr = server_socket.accept()
+    threading.Thread(target=receive_images, args=(conn,), daemon=True).start()
 except Exception as e:
     print(f"Error connecting to server socket: {e}")
-
-conn, addr = server_socket.accept()
-threading.Thread(target=receive_images, args=(conn,), daemon=True).start()
 
 try:
     msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     msg_client_socket.connect((SERVER_IP, 12000))
 except Exception as e:
     print(f"Error connecting to message socket: {e}")
-
 
 # Start the GUI loop
 root.mainloop()

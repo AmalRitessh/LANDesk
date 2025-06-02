@@ -92,7 +92,10 @@ def on_focus_out(event=None):
 
 def on_closing():
     stop_hook()
-    msg_client_socket.sendall(("CLOSEING FROM SERVER\n").encode())
+    try:
+        msg_client_socket.sendall(("CLOSEING FROM SERVER\n").encode())
+    except:
+        print("CLOSED BY CLIENT")
     server_socket.close()
     msg_client_socket.close()
     root.destroy()

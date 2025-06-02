@@ -39,7 +39,7 @@ def message_listener():
                             on_closing()
                         execute_input(json_str.strip())
             except Exception as e:
-                print(f"[ERROR] {e}")
+                print(f"Error reciving input data from server: {e}")
                 break
 
     conn.close()
@@ -112,12 +112,15 @@ def send_image():
         try:
             client_socket.sendall(size + data)
         except Exception as e:
-            print(f"[ERROR] {e}")
+            print(f"Error sending images to server: {e}")
             
 def on_closing():
     data = "CLOSED FROM CLIENT"
     size = len(data).to_bytes(4, 'big')
-    client_socket.sendall(size + data.encode())
+    try:
+        client_socket.sendall(size + data.encode())
+    except:
+        print("CLOSED BY SERVER")
     client_socket.close()
     root.destroy()
 

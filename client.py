@@ -7,6 +7,22 @@ import threading
 from pynput.mouse import Button, Controller
 import keyboard
 import tkinter as tk
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
+from cryptography.hazmat.backends import default_backend
+
+def chacha20_encrypt(key, plaintext, nonce):
+    algorithm = algorithms.ChaCha20(key, nonce)
+    cipher = Cipher(algorithm, mode=None, backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(plaintext)
+    return ciphertext
+
+def chacha20_decrypt(key, ciphertext, nonce):
+    algorithm = algorithms.ChaCha20(key, nonce)
+    cipher = Cipher(algorithm, mode=None, backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted_text = decryptor.update(ciphertext)
+    return decrypted_text
 
 mouse_controller = Controller()
 
@@ -14,6 +30,9 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("8.8.8.8", 80))  # Connect to a public DNS to get the right interface
 HOST_IP = s.getsockname()[0]
 s.close()
+
+key = b'Q\xc4/\xdc\xcem#\x1f\xc37\xb8\xcd\x8a\x9e\xc62\xc8L\x97\xb3UI\xad\x9a\xf8\xc8\xa5#\x1d\x18\xf0h'
+nonce = b'd\xfdZz\x1e\xd5\xa7E\x9f\xf2\xf7\xf6NU\x8c\xf1'
 
 def message_listener():
     msg_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -106,6 +125,8 @@ def send_image():
         img_byte_arr = io.BytesIO()
         screenshot.save(img_byte_arr, format='JPEG', quality=80)
         data = img_byte_arr.getvalue()
+
+        data = chacha20_encrypt(key, data, nonce)
 
         # Send length first
         size = len(data).to_bytes(4, 'big')

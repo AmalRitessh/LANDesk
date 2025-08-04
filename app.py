@@ -67,7 +67,7 @@ class LANDesk:
             return False
 
     def initiate_client(self,IP):
-        subprocess.Popen(["python3", "client.py", IP], text=True)
+        subprocess.Popen(["python", "client.py", IP], text=True)
 
     def initiate_server(self,IP,frame):
         try:
@@ -75,7 +75,7 @@ class LANDesk:
             msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             msg_client_socket.settimeout(2)
             msg_client_socket.connect((IP, 12345))
-            subprocess.Popen(["python3", "server.py", IP], text=True)
+            subprocess.Popen(["python", "server.py", IP], text=True)
 
             message = "CONNECT TO SERVER"
             msg_client_socket.sendall(message.encode())

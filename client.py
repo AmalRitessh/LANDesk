@@ -24,9 +24,6 @@ def chacha20_decrypt(key, ciphertext, nonce):
     decrypted_text = decryptor.update(ciphertext)
     return decrypted_text
 
-key = b'Q\xc4/\xdc\xcem#\x1f\xc37\xb8\xcd\x8a\x9e\xc62\xc8L\x97\xb3UI\xad\x9a\xf8\xc8\xa5#\x1d\x18\xf0h'
-nonce = b'd\xfdZz\x1e\xd5\xa7E\x9f\xf2\xf7\xf6NU\x8c\xf1'
-
 mouse_controller = Controller()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -152,6 +149,8 @@ def on_closing():
     root.destroy()
 
 SERVER_IP = sys.argv[1]
+key = bytes.fromhex(sys.argv[2])
+nonce = bytes.fromhex(sys.argv[3])
 PORT = 5000
 SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
 WIDTH_SCALE_FACTOR = SCREEN_WIDTH/1280

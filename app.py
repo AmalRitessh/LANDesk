@@ -1,11 +1,29 @@
+import os
 import tkinter as tk
 import socket
 import threading
 import subprocess
 import ipaddress
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.backends import default_backend
+import base64
+
+# Generating asymmetric key pair
+private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+public_key = private_key.public_key()
+
+public_pem = public_key.public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo
+)
 
 class LANDesk:
     def __init__(self):
+        self.received_pem_bytes = b''
+        self.key = b''
+        self.nonce = b''
+
         self.root = tk.Tk()
         self.root.title("LANDesk")
         self.root.config(bg="lightblue")
@@ -50,15 +68,33 @@ class LANDesk:
             data = conn.recv(1024)
             if not data:
                 break
-            print(f"{addr[0]}: {data.decode()}")
-            if data.decode() == "REQUESTING ACCESS":
+            print(f"{addr[0]}: {data[0:17].decode()}")
+            if data[0:17] == b"REQUESTING ACCESS":
+                self.received_pem_bytes = data[17:]
                 self.root.after(0, lambda: self.add_request(addr[0]))
-            elif data.decode() == "ACCEPTING REQUEST":
+            elif data[0:17] == b"ACCEPTING REQUEST":
+                encrypted = data[17:]
+                decrypted = private_key.decrypt(
+                    encrypted,
+                    padding.OAEP(
+                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                        algorithm=hashes.SHA256(),
+                        label=None
+                    )
+                )
+                self.key = decrypted[:32]
+                self.nonce = decrypted[32:] 
+
                 self.root.after(0, lambda: self.add_view(addr[0]))
-            elif data.decode() == "CONNECT TO SERVER":
+            elif data[0:17] == b"CONNECT TO SERVER":
                 self.root.after(0, lambda: self.initiate_client(addr[0]))
         conn.close()
 
+    def generate_chacha20_key_nonce(self):
+        key = os.urandom(32)
+        nonce = os.urandom(16)
+        return key, nonce
+    
     def is_valid_ip(self,ip_str):
         try:
             ipaddress.ip_address(ip_str)
@@ -67,7 +103,7 @@ class LANDesk:
             return False
 
     def initiate_client(self,IP):
-        subprocess.Popen(["python3", "client.py", IP], text=True)
+        subprocess.Popen(["python3", "client.py", IP, self.key.hex(), self.nonce.hex()], text=True)
 
     def initiate_server(self,IP,frame):
         try:
@@ -75,7 +111,7 @@ class LANDesk:
             msg_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             msg_client_socket.settimeout(2)
             msg_client_socket.connect((IP, 12345))
-            subprocess.Popen(["python3", "server.py", IP], text=True)
+            subprocess.Popen(["python3", "server.py", IP, self.key.hex(), self.nonce.hex()], text=True)
 
             message = "CONNECT TO SERVER"
             msg_client_socket.sendall(message.encode())
@@ -90,8 +126,8 @@ class LANDesk:
                 msg_client_socket.settimeout(2)
                 msg_client_socket.connect((IP, 12345))
 
-                message = "REQUESTING ACCESS"
-                msg_client_socket.sendall(message.encode())
+                message = b"REQUESTING ACCESS" + public_pem
+                msg_client_socket.sendall(message)
                 msg_client_socket.close()
             except:
                 print("can't connect: access_request")
@@ -105,8 +141,26 @@ class LANDesk:
             msg_client_socket.settimeout(2)
             msg_client_socket.connect((IP, 12345))
 
-            message = "ACCEPTING REQUEST"
-            msg_client_socket.sendall(message.encode())
+            # Generating symmetric key and nonce
+            self.key, self.nonce = self.generate_chacha20_key_nonce()
+            key_pair = self.key + self.nonce
+            loaded_public_key = serialization.load_pem_public_key(
+                self.received_pem_bytes,
+                backend=default_backend()
+            )
+
+            # Encrypt the key+nonce with the public key
+            encrypted = loaded_public_key.encrypt(
+                key_pair,
+                padding.OAEP(
+                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None
+                )
+            )
+
+            message = b"ACCEPTING REQUEST" + encrypted
+            msg_client_socket.sendall(message)
             msg_client_socket.close()
         except:
             print("can't connect: accept_response")

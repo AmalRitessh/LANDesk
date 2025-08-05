@@ -32,7 +32,9 @@ lock = threading.Lock()
 
 def send_message(message):
     try:
-        msg_client_socket.sendall((message + "\n").encode())
+        message = chacha20_encrypt(key,(message).encode(),nonce)
+        size = len(message).to_bytes(4, 'big')
+        msg_client_socket.sendall(size + message)
     except Exception as e:
         print(f"Error sending message: {e}")
 
@@ -112,7 +114,9 @@ def on_focus_out(event=None):
 def on_closing():
     stop_hook()
     try:
-        msg_client_socket.sendall(("CLOSEING FROM SERVER\n").encode())
+        message = chacha20_encrypt(key,("CLOSEING FROM SERVER").encode(),nonce)
+        size = len(message).to_bytes(4, 'big')
+        msg_client_socket.sendall(size + message)
     except:
         print("CLOSED BY CLIENT")
     server_socket.close()
@@ -134,9 +138,10 @@ def receive_images(conn):
                     break
                 data += packet
             data = chacha20_decrypt(key, data, nonce)
-            if data == b'CLOSED FROM CLIENT':
-                print("CLOSED FROM CLIENT")
-                on_closing()
+            if data.strip():
+                if data.strip() == b'CLOSED FROM CLIENT':
+                    print("CLOSED FROM CLIENT")
+                    on_closing()
 
             img = Image.open(io.BytesIO(data))
             resized_img = img.resize((1280, 720))

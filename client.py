@@ -24,15 +24,15 @@ def chacha20_decrypt(key, ciphertext, nonce):
     decrypted_text = decryptor.update(ciphertext)
     return decrypted_text
 
+key = b'Q\xc4/\xdc\xcem#\x1f\xc37\xb8\xcd\x8a\x9e\xc62\xc8L\x97\xb3UI\xad\x9a\xf8\xc8\xa5#\x1d\x18\xf0h'
+nonce = b'd\xfdZz\x1e\xd5\xa7E\x9f\xf2\xf7\xf6NU\x8c\xf1'
+
 mouse_controller = Controller()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(("8.8.8.8", 80))  # Connect to a public DNS to get the right interface
 HOST_IP = s.getsockname()[0]
 s.close()
-
-key = b'Q\xc4/\xdc\xcem#\x1f\xc37\xb8\xcd\x8a\x9e\xc62\xc8L\x97\xb3UI\xad\x9a\xf8\xc8\xa5#\x1d\x18\xf0h'
-nonce = b'd\xfdZz\x1e\xd5\xa7E\x9f\xf2\xf7\xf6NU\x8c\xf1'
 
 def message_listener():
     msg_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -45,18 +45,24 @@ def message_listener():
     with conn:
         while True:
             try:
-                data = conn.recv(1024).decode()
-                if not data:
+                size_data = conn.recv(4)
+                if not size_data:
                     break
+                size = int.from_bytes(size_data, 'big')
 
-                buffer += data
-                while '\n' in buffer:
-                    json_str, buffer = buffer.split('\n', 1)
-                    if json_str.strip():
-                        if json_str.strip() == "CLOSEING FROM SERVER":
-                            print("CLOSEING FROM SERVER")
-                            on_closing()
-                        execute_input(json_str.strip())
+                data = b''
+                while len(data) < size:
+                    packet = conn.recv(size - len(data))
+                    if not packet:
+                        break
+                    data += packet
+                data = chacha20_decrypt(key, data, nonce)
+                if data.strip():
+                    if data.strip() == b"CLOSEING FROM SERVER":
+                        print("CLOSEING FROM SERVER")
+                        on_closing()
+                    execute_input(data.strip())
+
             except Exception as e:
                 print(f"Error reciving input data from server: {e}")
                 break
@@ -136,10 +142,10 @@ def send_image():
             print(f"Error sending images to server: {e}")
             
 def on_closing():
-    data = "CLOSED FROM CLIENT"
+    data = chacha20_encrypt(key, b'CLOSED FROM CLIENT', nonce)
     size = len(data).to_bytes(4, 'big')
     try:
-        client_socket.sendall(size + data.encode())
+        client_socket.sendall(size + data)
     except:
         print("CLOSED BY SERVER")
     client_socket.close()

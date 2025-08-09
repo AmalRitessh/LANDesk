@@ -7,7 +7,6 @@ import ipaddress
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.backends import default_backend
-import base64
 
 # Generating asymmetric key pair
 private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)

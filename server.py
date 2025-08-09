@@ -155,7 +155,8 @@ def receive_images(conn):
 root = tk.Tk()
 root.title("LANDesk")
 root.minsize(width=1280, height=720)
-label = tk.Label(root, bg="lightblue")
+root.maxsize(width=1280, height=720)
+label = tk.Label(root, bg="#9ECAD6")
 label.place(x=0, y=0, width=1280, height=720)
 
 # Bind press events

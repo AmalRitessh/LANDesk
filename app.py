@@ -26,7 +26,7 @@ class LANDesk:
 
         self.root = tk.Tk()
         self.root.title("LANDesk")
-        self.root.config(bg="lightblue")
+        self.root.config(bg="#9ECAD6")
         self.root.minsize(853,480)
         self.root.maxsize(853,480)
         self.root.geometry("640x360+450+200")
@@ -36,21 +36,21 @@ class LANDesk:
         self.HOST_IP = s.getsockname()[0]
         s.close()
 
-        tk.Label(text="LANDesk",bg="lightblue",font=("Comic Sans MS",30,"bold")).pack()
-        tk.Label(text=self.HOST_IP,bg="lightblue",font=("Comic Sans MS",10,"bold")).pack()
+        tk.Label(text="LANDesk",bg="#9ECAD6",font=("Comic Sans MS",30,"bold")).pack()
+        tk.Label(text=self.HOST_IP,bg="#9ECAD6",font=("Comic Sans MS",10,"bold")).pack()
         connectToIp = tk.Entry(self.root, font=("Arial", 15))
         connectToIp.pack()
-        tk.Button(text="submit",bg="lightblue", font=("Comic Sans MS",14,"bold"),command=lambda: self.access_request(connectToIp.get().strip())).pack()
+        tk.Button(text="submit",bg="#9ECAD6", font=("Comic Sans MS",14,"bold"),command=lambda: self.access_request(connectToIp.get().strip())).pack()
 
 
-        tk.Label(self.root,text="request:",bg = "lightblue", font=("Comic Sans MS",14,"bold")).place(x=10,y=160)
+        tk.Label(self.root,text="request:",bg = "#9ECAD6", font=("Comic Sans MS",14,"bold")).place(x=10,y=160)
         self.requestFrame = tk.Frame(self.root)
-        self.requestFrame.config(bg="green")
+        self.requestFrame.config(bg="#748DAE")
         self.requestFrame.place(x=1, y=200, width=425, height=280)
 
-        tk.Label(self.root,text="view:",bg = "lightblue", font=("Comic Sans MS",14,"bold")).place(x=437,y=160)
+        tk.Label(self.root,text="view:",bg = "#9ECAD6", font=("Comic Sans MS",14,"bold")).place(x=437,y=160)
         self.viewFrame = tk.Frame(self.root)
-        self.viewFrame.config(bg="red")
+        self.viewFrame.config(bg="#748DAE")
         self.viewFrame.place(x=427, y=200, width=425, height=280)
 
         message_thread = threading.Thread(target=self.message_listener, daemon=True)
@@ -167,26 +167,26 @@ class LANDesk:
 
     def add_request(self,IP):
         requestObjectFrame = tk.Frame(self.requestFrame)
-        requestObjectFrame.config(bg="yellow",height=50,width=425)
+        requestObjectFrame.config(bg="#F5CBCB",height=50,width=425)
         requestObjectFrame.pack(pady=2)
 
-        tk.Label(requestObjectFrame,text=IP,font=("Comic Sans MS",13)).place(x=65,y=10)
-        accept = tk.Button(requestObjectFrame,text="Accept",font=("Comic Sans MS",12), command=lambda f=requestObjectFrame: self.accept_response(IP,f))
+        tk.Label(requestObjectFrame,bg="#F5CBCB",text=IP,font=("Comic Sans MS",13)).place(x=65,y=10)
+        accept = tk.Button(requestObjectFrame,bg="#FFEAEA",text="Accept",font=("Comic Sans MS",12), command=lambda f=requestObjectFrame: self.accept_response(IP,f))
         accept.place(x=250,y=5)
 
-        reject = tk.Button(requestObjectFrame,text="Reject",font=("Comic Sans MS",12),command=lambda f=requestObjectFrame: self.remove(f))
+        reject = tk.Button(requestObjectFrame,bg="#FFEAEA",text="Reject",font=("Comic Sans MS",12),command=lambda f=requestObjectFrame: self.remove(f))
         reject.place(x=340,y=5)
 
     def add_view(self,IP):
         viewObjectFrame = tk.Frame(self.viewFrame)
-        viewObjectFrame.config(bg="yellow",height=50,width=425)
+        viewObjectFrame.config(bg="#F5CBCB",height=50,width=425)
         viewObjectFrame.pack(pady=2)
 
-        tk.Label(viewObjectFrame,text=IP,font=("Comic Sans MS",13)).place(x=65,y=10)
-        view = tk.Button(viewObjectFrame,text="View",font=("Comic Sans MS",12), command=lambda f=viewObjectFrame: self.initiate_server(IP,f))
+        tk.Label(viewObjectFrame,bg="#F5CBCB",text=IP,font=("Comic Sans MS",13)).place(x=65,y=10)
+        view = tk.Button(viewObjectFrame,bg="#FFEAEA",text="View",font=("Comic Sans MS",12), command=lambda f=viewObjectFrame: self.initiate_server(IP,f))
         view.place(x=250,y=5)
 
-        reject = tk.Button(viewObjectFrame,text="Reject",font=("Comic Sans MS",12),command=lambda f=viewObjectFrame: self.remove(f))
+        reject = tk.Button(viewObjectFrame,bg="#FFEAEA",text="Reject",font=("Comic Sans MS",12),command=lambda f=viewObjectFrame: self.remove(f))
         reject.place(x=340,y=5)
 
     def remove(self,frame):

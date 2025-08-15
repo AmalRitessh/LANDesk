@@ -17,26 +17,33 @@ A secure, LAN-based remote access application that allows users to control and m
 
 ## 🚀  Setup Instructions
 
-1. Download and extract the zip file for the code from the repository
-
+1. Clone the Repository
+     ```bash
+     git clone https://github.com/AmalRitessh/LANDesk
+     cd LANDesk
+      ```
 2. Install the requirements.txt
    ```bash
    pip install -r requirements.txt
    ```
-2. Run app.py
+3. Run app.py
    ```bash
    python3 app.py
    ```
-3. Enter the Ip address of client in the input box
+4. Enter the Ip address of client in the input box
 <br> **Note**: Ensure that LANDesk is already running in the client before sending request.
 ![home page](https://github.com/AmalRitessh/LANDesk/blob/mouse-interaction/assets/input_ip.png)
 
-4. Request to connect sent to client
+5. Request to connect sent to client
 ![home page](https://github.com/AmalRitessh/LANDesk/blob/mouse-interaction/assets/connection_request.png)
 
-5. Once client accepts, The server can view screen and send keyboard and mouse inputs
+6. Once client accepts, The server can view screen and send keyboard and mouse inputs
 ![home page](https://github.com/AmalRitessh/LANDesk/blob/mouse-interaction/assets/view_option.png)
 ![home page](https://github.com/AmalRitessh/LANDesk/blob/mouse-interaction/assets/screen.png)
+
+7. To close from client side, click on the close button in the pop up window.
+
+8. To close from server side, either click on the close button in the pop up or in the main window.
 
 
 ## Contributors

@@ -6,6 +6,23 @@ import pyautogui
 import threading
 from pynput.mouse import Button, Controller
 import keyboard
+import tkinter as tk
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
+from cryptography.hazmat.backends import default_backend
+
+def chacha20_encrypt(key, plaintext, nonce):
+    algorithm = algorithms.ChaCha20(key, nonce)
+    cipher = Cipher(algorithm, mode=None, backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(plaintext)
+    return ciphertext
+
+def chacha20_decrypt(key, ciphertext, nonce):
+    algorithm = algorithms.ChaCha20(key, nonce)
+    cipher = Cipher(algorithm, mode=None, backend=default_backend())
+    decryptor = cipher.decryptor()
+    decrypted_text = decryptor.update(ciphertext)
+    return decrypted_text
 
 mouse_controller = Controller()
 
@@ -25,17 +42,26 @@ def message_listener():
     with conn:
         while True:
             try:
-                data = conn.recv(1024).decode()
-                if not data:
+                size_data = conn.recv(4)
+                if not size_data:
                     break
+                size = int.from_bytes(size_data, 'big')
 
-                buffer += data
-                while '\n' in buffer:
-                    json_str, buffer = buffer.split('\n', 1)
-                    if json_str.strip():
-                        execute_input(json_str.strip())
+                data = b''
+                while len(data) < size:
+                    packet = conn.recv(size - len(data))
+                    if not packet:
+                        break
+                    data += packet
+                data = chacha20_decrypt(key, data, nonce)
+                if data.strip():
+                    if data.strip() == b"CLOSEING FROM SERVER":
+                        print("CLOSEING FROM SERVER")
+                        on_closing()
+                    execute_input(data.strip())
+
             except Exception as e:
-                print(f"[ERROR] {e}")
+                print(f"Error reciving input data from server: {e}")
                 break
 
     conn.close()
@@ -96,8 +122,35 @@ def execute_input(json_data):
         except Exception as e:
             print(f"Error processing key event: {e}")
 
+def send_image():
+    while True:
+        screenshot = pyautogui.screenshot()
+        img_byte_arr = io.BytesIO()
+        screenshot.save(img_byte_arr, format='JPEG', quality=80)
+        data = img_byte_arr.getvalue()
+
+        data = chacha20_encrypt(key, data, nonce)
+
+        # Send length first
+        size = len(data).to_bytes(4, 'big')
+        try:
+            client_socket.sendall(size + data)
+        except Exception as e:
+            print(f"Error sending images to server: {e}")
+            
+def on_closing():
+    data = chacha20_encrypt(key, b'CLOSED FROM CLIENT', nonce)
+    size = len(data).to_bytes(4, 'big')
+    try:
+        client_socket.sendall(size + data)
+    except:
+        print("CLOSED BY SERVER")
+    client_socket.close()
+    root.destroy()
 
 SERVER_IP = sys.argv[1]
+key = bytes.fromhex(sys.argv[2])
+nonce = bytes.fromhex(sys.argv[3])
 PORT = 5000
 SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
 WIDTH_SCALE_FACTOR = SCREEN_WIDTH/1280
@@ -109,12 +162,18 @@ message_thread.start()
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((SERVER_IP, PORT))
 
-while True:
-    screenshot = pyautogui.screenshot()
-    img_byte_arr = io.BytesIO()
-    screenshot.save(img_byte_arr, format='JPEG', quality=80)
-    data = img_byte_arr.getvalue()
+send_image_thread = threading.Thread(target=send_image,daemon=True)
+send_image_thread.start()
 
-    # Send length first
-    size = len(data).to_bytes(4, 'big')
-    client_socket.sendall(size + data)
+root = tk.Tk()
+root.title("LANDesk - Remote Session Active")
+root.config(bg="#9ECAD6")
+root.minsize(height=120, width= 450)
+root.maxsize(height=120, width= 450)
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
+label = tk.Label(root,bg="#9ECAD6",font=("Comic Sans MS",17),text='Connected to IP '+SERVER_IP)
+label.pack()
+
+tk.Button(root, bg="#9ECAD6", font=("Comic Sans MS",13), text="Close", command=on_closing).pack()
+root.mainloop()

@@ -1,0 +1,5 @@
+cryptography
+pyautogui
+pynput
+keyboard
+Pillow
